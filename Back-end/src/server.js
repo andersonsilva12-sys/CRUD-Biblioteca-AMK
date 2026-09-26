@@ -3,21 +3,19 @@ const cors = require('cors');
 
 const autoresRoutes = require('./routes/autores.routes');
 const categoriasRoutes = require('./routes/categorias.routes');
-const livrosRoutes = require('./routes/livros.routes');
+const livrosRoutes = require('./routes/livros.routes'); // 1. Confirmar importação
 
 const app = express();
-const PORT = 3000;
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Rotas da API
-app.use(autoresRoutes);
-app.use(categoriasRoutes);
-app.use(livrosRoutes);
+// 2. Registrar os prefixos exatos
+app.use('/autores', autoresRoutes);
+app.use('/categorias', categoriasRoutes);
+app.use('/livros', livrosRoutes); // Garanta que está no plural '/livros'
 
-// Inicia o servidor
+const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor rodando em http://localhost:${PORT}`);
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
 });

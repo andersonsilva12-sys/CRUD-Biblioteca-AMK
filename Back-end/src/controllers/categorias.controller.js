@@ -1,83 +1,65 @@
-let categorias = [
-    { id: 1, nome: "Romance" },
-    { id: 2, nome: "Ficção Científica" }
-];
-let proximoId = 3;
+const db = require('../../BD/tabelas');
 
-// GET /categorias
 exports.listarCategorias = (req, res) => {
-    res.status(200).json(categorias);
+  db.all('SELECT * FROM categorias', [], (err, rows) => {
+    if (err) return res.status(500).json({ erro: err.message });
+    res.status(200).json(rows);
+  });
 };
 
-// GET /categorias/:id
 exports.buscarCategoriaPorId = (req, res) => {
-    const id = parseInt(req.params.id);
-    const categoria = categorias.find(c => c.id === id);
-
-    if (!categoria) {
-        return res.status(404).json({ mensagem: "Categoria não encontrada" });
-    }
-
-    res.status(200).json(categoria);
+  const { id } = req.params;
+  db.get('SELECT * FROM categorias WHERE id = ?', [id], (err, row) => {
+    if (err) return res.status(500).json({ erro: err.message });
+    if (!row) return res.status(404).json({ mensagem: 'Categoria não encontrada' });
+    res.status(200).json(row);
+  });
 };
 
-// POST /categorias
 exports.criarCategoria = (req, res) => {
-    const { nome } = req.body;
+  const { nome } = req.body;
+  if (!nome) return res.status(400).json({ mensagem: "O campo 'nome' é obrigatório." });
 
-    if (!nome) {
-        return res.status(400).json({ mensagem: "O campo 'nome' é obrigatório" });
+  const query = 'INSERT INTO categorias (nome) VALUES (?)';
+  db.run(query, [nome], function (err) {
+    if (err) {
+      if (err.message.includes('UNIQUE constraint failed')) {
+        return res.status(400).json({ mensagem: 'Já existe uma categoria com este nome.' });
+      }
+      return res.status(500).json({ erro: err.message });
     }
-
-    // Regra do contrato: 'nome' deve ser único
-    const jaExiste = categorias.some(c => c.nome.toLowerCase() === nome.toLowerCase());
-    if (jaExiste) {
-        return res.status(400).json({ mensagem: "Já existe uma categoria com esse nome" });
-    }
-
-    const novaCategoria = {
-        id: proximoId++,
-        nome
-    };
-    categorias.push(novaCategoria);
-    res.status(201).json(novaCategoria);
+    res.status(201).json({ id: this.lastID, nome });
+  });
 };
 
-// PUT /categorias/:id
 exports.atualizarCategoria = (req, res) => {
-    const id = parseInt(req.params.id);
-    const { nome } = req.body;
+  const { id } = req.params;
+  const { nome } = req.body;
+  if (!nome) return res.status(400).json({ mensagem: "O campo 'nome' é obrigatório." });
 
-    const categoriaIndex = categorias.findIndex(c => c.id === id);
-    if (categoriaIndex === -1) {
-        return res.status(404).json({ mensagem: "Categoria não encontrada" });
+  const query = 'UPDATE categorias SET nome = ? WHERE id = ?';
+  db.run(query, [nome, id], function (err) {
+    if (err) {
+      if (err.message.includes('UNIQUE constraint failed')) {
+        return res.status(400).json({ mensagem: 'Já existe uma categoria com este nome.' });
+      }
+      return res.status(500).json({ erro: err.message });
     }
-    if (!nome) {
-        return res.status(400).json({ mensagem: "O campo 'nome' é obrigatório" });
-    }
-    // Validar se o novo nome já está em uso por outra categoria
-    const jaExiste = categorias.some(c => c.nome.toLowerCase() === nome.toLowerCase() && c.id !== id);
-    if (jaExiste) {
-        return res.status(400).json({ mensagem: "Já existe uma categoria com esse nome" });
-    }
-
-    categorias[categoriaIndex].nome = nome;
-    res.status(200).json(categorias[categoriaIndex]);
+    if (this.changes === 0) return res.status(404).json({ mensagem: 'Categoria não encontrada' });
+    res.status(200).json({ id: Number(id), nome });
+  });
 };
-
-// DELETE /categorias/:id
 
 exports.deletarCategoria = (req, res) => {
-    const id = parseInt(req.params.id);
-    const categoriaIndex = categorias.findIndex(c => c.id === id);
-
-    if (categoriaIndex === -1) {
-        return res.status(404).json({ mensagem: "Categoria não encontrada" });
+  const { id } = req.params;
+  db.run('DELETE FROM categorias WHERE id = ?', [id], function (err) {
+    if (err) {
+      if (err.message.includes('FOREIGN KEY constraint failed')) {
+        return res.status(400).json({ mensagem: 'Não é possível excluir a categoria pois ela possui livros vinculados.' });
+      }
+      return res.status(500).json({ erro: err.message });
     }
-
-    categorias.splice(categoriaIndex, 1);
-    res.status(200).json({ mensagem: "Categoria deletada com sucesso" });
+    if (this.changes === 0) return res.status(404).json({ mensagem: 'Categoria não encontrada' });
+    res.status(200).json({ mensagem: 'Categoria excluída com sucesso' });
+  });
 };
-
-// Exporta o array para validação no controller de livros
-exports._categoriasEmMemoria = categorias;
