@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Inicio</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="../css/style.css" rel="stylesheet" />
+  </head>
+  <body>
+    <nav class="sidebar" id="sidebar">
+      <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+      <a class="menu-item active">
+        <span class="menu-icon">📚</span>
+        <span class="menu-text">Início</span>
+      </a>
+      <a class="menu-item">
+        <span class="menu-icon">📖</span>
+        <span class="menu-text">Meus Livros</span>
+      </a>
+      <a class="menu-item">
+        <span class="menu-icon">⭐</span>
+        <span class="menu-text">Favoritos</span>
+      </a>
+      <a class="menu-item">
+        <span class="menu-icon">🕐</span>
+        <span class="menu-text">Histórico</span>
+      </a>
+      <a class="menu-item">
+        <span class="menu-icon">⚙️</span>
+        <span class="menu-text">Configurações</span>
+      </a>
+    </nav>
+
+    <main class="content">
+      <h1>Minha Biblioteca</h1>
+      <div class="grid" id="grid"></div>
+    </main>
+  </body>
+</html>
+<script src="../js/script.js"></script>
