@@ -1,0 +1,3 @@
+# INICÍO DA BIBLIOTECA PICA DAS GALAXIAS
+
+- inicio de tudo
