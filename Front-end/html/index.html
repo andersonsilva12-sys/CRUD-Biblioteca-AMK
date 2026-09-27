@@ -1,93 +1,155 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <title>Biblioteca Online</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="../css/style.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  </head>
-  <body>
-    <nav class="sidebar" id="sidebar">
-      <div class="logo">
-        <i class="fa-solid fa-book-open"></i>
-        <span>Biblioteca Online</span>
-      </div>
-      <div class="menu">
-        <a class="menu-item active">
-          <i class="fa-solid fa-book"></i>
-          <span>Livros</span>
-        </a>
-        <a class="menu-item">
-          <i class="fa-solid fa-plus"></i>
-          <span>Adicionar Livro</span>
-        </a>
-        <a class="menu-item">
-          <i class="fa-solid fa-tag"></i>
-          <span>Categorias</span>
-        </a>
-        <a class="menu-item">
-          <i class="fa-solid fa-user"></i>
-          <span>Autores</span>
-        </a>
-      </div>
-      <div class="menu-bottom">
-        <a class="menu-item">
-          <i class="fa-solid fa-gear"></i>
-          <span>Configurações</span>
-        </a>
-        <a class="menu-item">
-          <i class="fa-solid fa-right-from-bracket"></i>
-          <span>Sair</span>
-        </a>
-      </div>
-    </nav>
 
-    <main class="content">
-      <header class="topbar">
-        <div class="search-bar">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" placeholder="Pesquisar por título, autor, ISBN..." />
-        </div>
-        <div class="user-profile">
-          <div class="avatar"><i class="fa-solid fa-user"></i></div>
-          <span>Usuário</span>
-          <i class="fa-solid fa-chevron-down"></i>
-        </div>
-      </header>
+<head>
+  <title>Biblioteca Online</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
 
-      <div class="main-content">
-        <div class="book-list-section">
-          <div class="section-header">
-            <div>
-              <h1>Livros</h1>
-              <p>Gerencie os livros da sua biblioteca</p>
-            </div>
-            <button class="btn-primary"><i class="fa-solid fa-plus"></i> Adicionar Livro</button>
+<body>
+  <nav class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fa-solid fa-book-open"></i>
+      <span>Biblioteca Online</span>
+    </div>
+    <div class="menu">
+      <a class="menu-item active">
+        <i class="fa-solid fa-book"></i>
+        <span>Livros</span>
+      </a>
+      <a class="menu-item" onclick="abrirModal()">
+        <i class="fa-solid fa-plus"></i>
+        <span>Adicionar Livro</span>
+      </a>
+      <a class="menu-item">
+        <i class="fa-solid fa-tag"></i>
+        <span>Categorias</span>
+      </a>
+      <a class="menu-item">
+        <i class="fa-solid fa-user"></i>
+        <span>Autores</span>
+      </a>
+    </div>
+    <div class="menu-bottom">
+      <a class="menu-item">
+        <i class="fa-solid fa-gear"></i>
+        <span>Configurações</span>
+      </a>
+      <a class="menu-item">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Sair</span>
+      </a>
+    </div>
+  </nav>
+
+  <main class="content">
+    <header class="topbar">
+      <div class="search-bar">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="Pesquisar por título, autor, ISBN..." />
+      </div>
+      <div class="user-profile">
+        <div class="avatar"><i class="fa-solid fa-user"></i></div>
+        <span>Usuário</span>
+        <i class="fa-solid fa-chevron-down"></i>
+      </div>
+    </header>
+
+    <div class="main-content">
+      <div class="book-list-section">
+        <div class="section-header">
+          <div>
+            <h1>Livros</h1>
+            <p>Gerencie os livros da sua biblioteca</p>
           </div>
-
-          <div class="filters">
-            <div class="filter-input">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" placeholder="Filtrar livros..." id="filterInput" />
-            </div>
-            <select class="filter-select" id="genreFilter">
-              <option value="">Todos os gêneros</option>
-            </select>
-          </div>
-
-          <div class="book-list" id="bookList"></div>
+          <button class="btn-primary" onclick="abrirModal()"><i class="fa-solid fa-plus"></i> Adicionar Livro</button>
         </div>
 
-        <div class="detail-panel" id="detailPanel">
-          <div class="detail-header">
-            <button class="close-btn" onclick="closeDetail()"><i class="fa-solid fa-xmark"></i></button>
+        <div class="filters">
+          <div class="filter-input">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="Filtrar livros..." id="filterInput" />
           </div>
-          <div id="detailContent"></div>
+          <select class="filter-select" id="genreFilter">
+            <option value="">Todos os gêneros</option>
+          </select>
         </div>
+
+        <div class="book-list" id="bookList"></div>
       </div>
-    </main>
 
-    <script src="../js/script.js"></script>
-  </body>
+      <div class="detail-panel" id="detailPanel">
+        <div class="detail-header">
+          <button class="close-btn" onclick="closeDetail()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="detailContent"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal para Adicionar/Editar Livro -->
+  <div id="modalLivro" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Cadastrar Novo Livro</h2>
+        <button class="close-btn" onclick="fecharModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="formLivro" onsubmit="salvarLivro(event)">
+        <div class="form-group">
+          <label for="titulo">Título do Livro</label>
+          <input type="text" id="titulo" required placeholder="Ex: Dom Casmurro">
+        </div>
+
+        <div class="form-group">
+          <label for="autor_id">Autor</label>
+          <select id="autor_id" required>
+            <option value="">Selecione um autor...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="categoria_id">Categoria</label>
+          <select id="categoria_id" required>
+            <option value="">Selecione uma categoria...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="isbn">ISBN</label>
+          <input type="text" id="isbn" placeholder="Ex: 978-85-359-0271-3">
+        </div>
+
+        <div class="form-group">
+          <label for="ano_publicacao">Ano de Publicação</label>
+          <input type="number" id="ano_publicacao" placeholder="Ex: 1899">
+        </div>
+
+        <div class="form-group">
+          <label for="editora">Editora</label>
+          <input type="text" id="editora" placeholder="Ex: Companhia das Letras">
+        </div>
+
+        <div class="form-group">
+          <label for="sinopse">Sinopse</label>
+          <textarea id="sinopse" rows="3" placeholder="Digite uma breve sinopse do livro..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="fecharModal()">Cancelar</button>
+          <button type="submit" class="btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+ 
+
+  <!-- Remova ou comente esta linha -->
+  <!-- <script src="../js/main.js"></script> -->
+
+  <script src="../js/script.js"></script>
+</body>
+
 </html>

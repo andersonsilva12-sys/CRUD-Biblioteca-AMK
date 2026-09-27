@@ -2,10 +2,11 @@ const express = require('express');
 const router = express.Router();
 const categoriasController = require('../controllers/categorias.controller');
 
-router.get('/categorias', categoriasController.listarCategorias);
-router.get('/categorias/:id', categoriasController.buscarCategoriaPorId);
-router.post('/categorias', categoriasController.criarCategoria);
-router.put('/categorias/:id', categoriasController.atualizarCategoria);
-router.delete('/categorias/:id', categoriasController.deletarCategoria);
+// Use apenas '/' pois o '/categorias' já foi definido no server.js
+router.get('/', categoriasController.listarCategorias);
+router.get('/:id', categoriasController.buscarCategoriaPorId);
+router.post('/', categoriasController.criarCategoria);
+router.put('/:id', categoriasController.atualizarCategoria);
+router.delete('/:id', categoriasController.deletarCategoria);
 
 module.exports = router;

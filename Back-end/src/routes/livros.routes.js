@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const livrosController = require('../controllers/livros.controller');
 
-// Como o prefixo '/livros' já foi definido no server.js, aqui usamos apenas '/'
 router.get('/', livrosController.listarLivros);
 router.get('/:id', livrosController.buscarLivroPorId);
 router.post('/', livrosController.criarLivro);

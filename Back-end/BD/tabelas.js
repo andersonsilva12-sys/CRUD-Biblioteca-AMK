@@ -20,7 +20,7 @@ db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS autores (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nome TEXT NOT NULL,
+      nome TEXT NOT NULL UNIQUE,
       nacionalidade TEXT
     )
   `);
@@ -49,6 +49,10 @@ db.serialize(() => {
       FOREIGN KEY (categoria_id) REFERENCES categorias(id)
     )
   `);
+
+  // --- Inserção de dados iniciais (População) ---
+  db.run(`INSERT OR IGNORE INTO autores (nome, nacionalidade) VALUES ('Lewis Carroll', 'Britânica')`);
+  db.run(`INSERT OR IGNORE INTO categorias (nome) VALUES ('Fantasia')`);
 });
 
 module.exports = db;

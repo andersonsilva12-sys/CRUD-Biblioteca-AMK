@@ -1,115 +1,228 @@
-const livros = [
-  { titulo: "Dom Casmurro", autor: "Machado de Assis", genero: "Romance", icone: "📕",
-    isbn: "978-85-359-0271-3", ano: "1899", editora: "Penguin Companhia",
-    sinopse: "O clássico de Machado de Assis narra a história de Bentinho, que, ao revisitar o passado, conta sua versão dos fatos sobre o relacionamento com Capitu, levantando dúvidas e reflexões sobre o ciúme, a memória e a verdade.",
-    tags: ["Romance", "Clássico", "Literatura Brasileira"] }
-];
-// Elementos do DOM
-const bookList = document.getElementById('bookList');
-const detailPanel = document.getElementById('detailPanel');
-const detailContent = document.getElementById('detailContent');
-const filterInput = document.getElementById('filterInput');
-const genreFilter = document.getElementById('genreFilter');
+const API_URL = 'http://localhost:3000';
+let livrosData = [];
+let autoresData = [];
+let categoriasData = [];
+let livroEmEdicaoId = null; // Controla se estamos criando ou editando
 
-// Função para renderizar a lista de livros
-function renderBooks(lista = livros) {
-  bookList.innerHTML = '';
-  lista.forEach(livro => {
-    const index = livros.indexOf(livro);
-    const card = document.createElement('div');
-    card.className = 'book-card';
-    card.dataset.index = index;
-    card.innerHTML = `
-      <div class="book-cover">${livro.icone}</div>
-      <div class="book-info">
-        <h3>${livro.titulo}</h3>
-        <p>${livro.autor}</p>
-        <span class="badge">${livro.genero}</span>
+// 1. Carregar Autores e Categorias para os selects do Modal
+async function carregarOpcoesSelect() {
+  try {
+    const [resAutores, resCategorias] = await Promise.all([
+      fetch(`${API_URL}/autores`),
+      fetch(`${API_URL}/categorias`)
+    ]);
+
+    autoresData = await resAutores.json();
+    categoriasData = await resCategorias.json();
+
+    const selectAutor = document.getElementById('autor_id');
+    const selectCategoria = document.getElementById('categoria_id');
+
+    if (selectAutor && selectCategoria) {
+      selectAutor.innerHTML = '<option value="">Selecione um autor...</option>';
+      selectCategoria.innerHTML = '<option value="">Selecione uma categoria...</option>';
+
+      autoresData.forEach(a => selectAutor.innerHTML += `<option value="${a.id}">${a.nome}</option>`);
+      categoriasData.forEach(c => selectCategoria.innerHTML += `<option value="${c.id}">${c.nome}</option>`);
+    }
+  } catch (erro) {
+    console.error('Erro ao carregar opções dos selects:', erro);
+  }
+}
+
+// 2. Controle de Abertura/Fechamento do Modal
+async function abrirModal(livro = null) {
+  await carregarOpcoesSelect();
+  const modal = document.getElementById('modalLivro');
+  const tituloModal = modal.querySelector('h2');
+
+  if (livro) {
+    // Modo Edição: Preenche todos os campos com os dados atuais do livro
+    livroEmEdicaoId = livro.id;
+    tituloModal.textContent = 'Editar Livro';
+    document.getElementById('titulo').value = livro.titulo || '';
+    document.getElementById('autor_id').value = livro.autor_id || '';
+    document.getElementById('categoria_id').value = livro.categoria_id || '';
+    
+    // Novos campos adicionados:
+    if (document.getElementById('isbn')) document.getElementById('isbn').value = livro.isbn || '';
+    if (document.getElementById('ano_publicacao')) document.getElementById('ano_publicacao').value = livro.ano_publicacao || '';
+    if (document.getElementById('editora')) document.getElementById('editora').value = livro.editora || '';
+    if (document.getElementById('sinopse')) document.getElementById('sinopse').value = livro.sinopse || '';
+  } else {
+    // Modo Cadastro: Limpa todos os campos
+    livroEmEdicaoId = null;
+    tituloModal.textContent = 'Cadastrar Novo Livro';
+    document.getElementById('formLivro').reset();
+  }
+
+  if (modal) modal.style.display = 'flex';
+}
+
+function fecharModal() {
+  const modal = document.getElementById('modalLivro');
+  if (modal) {
+    modal.style.display = 'none';
+    document.getElementById('formLivro').reset();
+    livroEmEdicaoId = null;
+  }
+}
+
+// 3. Buscar e Renderizar os Cards no Centro (com Botões de Ação)
+async function carregarLivros() {
+  try {
+    const resposta = await fetch(`${API_URL}/livros`);
+    livrosData = await resposta.json();
+    renderBooks(livrosData);
+  } catch (erro) {
+    console.error('Erro ao buscar livros:', erro);
+  }
+}
+
+function renderBooks(livros) {
+  const container = document.getElementById('bookList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!livros || livros.length === 0) {
+    container.innerHTML = '<p style="color: #94a3b8; padding: 1rem;">Nenhum livro cadastrado.</p>';
+    return;
+  }
+
+  livros.forEach((livro, index) => {
+    // Mapeia o nome do Autor e Categoria a partir do ID
+    const autor = autoresData.find(a => a.id === livro.autor_id)?.nome || `Autor #${livro.autor_id}`;
+    const categoria = categoriasData.find(c => c.id === livro.categoria_id)?.nome || `Cat #${livro.categoria_id}`;
+
+    container.innerHTML += `
+      <div class="book-card" data-index="${index}" onclick="showDetail(${index})">
+        <div class="book-cover"><i class="fa-solid fa-book"></i></div>
+        <div class="book-info">
+          <h3>${livro.titulo}</h3>
+          <p>${autor}</p>
+          <span class="badge">${categoria}</span>
+        </div>
+        <div class="book-actions" onclick="event.stopPropagation()">
+          <button class="action-btn edit-btn" title="Editar" onclick="abrirModal(livrosData[${index}])">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button class="action-btn delete-btn" title="Excluir" onclick="deletarLivro(${livro.id})">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
       </div>
-      <div class="book-actions">
-        <i class="fa-solid fa-pen" onclick="event.stopPropagation();"></i>
-        <i class="fa-solid fa-trash" onclick="event.stopPropagation();"></i>
-      </div>`;
-    card.addEventListener('click', () => showDetail(index));
-    bookList.appendChild(card);
+    `;
   });
 }
 
-// Função para exibir detalhes do livro selecionado
+// 4. Exibir o Painel Lateral de Detalhes
 function showDetail(index) {
-  const livro = livros[index];
+  const livro = livrosData[index];
+  if (!livro) return;
+
+  const detailPanel = document.getElementById('detailPanel');
+  const detailContent = document.getElementById('detailContent');
+
   document.querySelectorAll('.book-card').forEach(c => c.classList.remove('active'));
-  document.querySelector(`.book-card[data-index="${index}"]`).classList.add('active');
+  const activeCard = document.querySelector(`.book-card[data-index="${index}"]`);
+  if (activeCard) activeCard.classList.add('active');
+
+  const autorNome = autoresData.find(a => a.id === livro.autor_id)?.nome || `Autor #${livro.autor_id}`;
+  const categoriaNome = categoriasData.find(c => c.id === livro.categoria_id)?.nome || `Categoria #${livro.categoria_id}`;
+
   detailContent.innerHTML = `
     <div class="detail-top">
-      <div class="detail-cover">${livro.icone}</div>
+      <div class="detail-cover"><i class="fa-solid fa-book"></i></div>
       <div class="detail-info">
         <h2>${livro.titulo}</h2>
-        <p class="author">${livro.autor}</p>
-        <span class="badge">${livro.genero}</span>
+        <p class="author">${autorNome}</p>
+        <span class="badge">${categoriaNome}</span>
       </div>
     </div>
-    <div class="detail-meta">
-      <div class="meta-item"><i class="fa-solid fa-book"></i><strong>ISBN:</strong> ${livro.isbn}</div>
-      <div class="meta-item"><i class="fa-solid fa-calendar"></i><strong>Ano de publicação:</strong> ${livro.ano}</div>
-      <div class="meta-item"><i class="fa-solid fa-user"></i><strong>Editora:</strong> ${livro.editora}</div>
+    <div class="detail-meta" style="margin-top: 1.5rem;">
+      <div class="meta-item"><i class="fa-solid fa-barcode"></i> <strong>ISBN:</strong> ${livro.isbn || 'Não informado'}</div>
+      <div class="meta-item"><i class="fa-solid fa-calendar"></i> <strong>Ano de publicação:</strong> ${livro.ano_publicacao || 'N/A'}</div>
+      <div class="meta-item"><i class="fa-solid fa-building"></i> <strong>Editora:</strong> ${livro.editora || 'N/A'}</div>
     </div>
-    <div class="detail-section">
+    <div class="detail-section" style="margin-top: 1.5rem;">
       <h4><i class="fa-solid fa-file-lines"></i> Sinopse</h4>
-      <p>${livro.sinopse}</p>
+      <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">${livro.sinopse || 'Sem sinopse cadastrada.'}</p>
     </div>
-    <div class="detail-section">
-      <h4><i class="fa-solid fa-tag"></i> Tags</h4>
-      <div class="tags">${livro.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
-    </div>
-    <div class="detail-actions">
-      <button class="btn-edit"><i class="fa-solid fa-pen"></i> Editar</button>
-      <button class="btn-delete"><i class="fa-solid fa-trash"></i> Remover</button>
-    </div>`;
+  `;
 
   detailPanel.classList.add('open');
 }
 
-// Função para fechar o painel de detalhes
 function closeDetail() {
-  detailPanel.classList.remove('open');
+  const detailPanel = document.getElementById('detailPanel');
+  if (detailPanel) detailPanel.classList.remove('open');
   document.querySelectorAll('.book-card').forEach(c => c.classList.remove('active'));
 }
-// Preencher filtro de gênero
-const generos = [...new Set(livros.map(l => l.genero))];
-generos.forEach(g => {
-  const opt = document.createElement('option');
-  opt.value = g;
-  opt.textContent = g;
-  genreFilter.appendChild(opt);
-});
-// Função para aplicar filtros de busca e gênero
-function applyFilters() {
-  const texto = filterInput.value.toLowerCase().trim();
-  const genero = genreFilter.value;
-  renderBooks(livros.filter(l =>
-    (l.titulo.toLowerCase().includes(texto) ||
-     l.autor.toLowerCase().includes(texto) ||
-     l.isbn.toLowerCase().includes(texto)) &&
-    (!genero || l.genero === genero)
-  ));
+
+// 5. Salvar (Trata POST para novo ou PUT para edição)
+async function salvarLivro(event) {
+  event.preventDefault();
+
+  const isbnVal = document.getElementById('isbn')?.value;
+  const anoVal = document.getElementById('ano_publicacao')?.value;
+  const editoraVal = document.getElementById('editora')?.value;
+  const sinopseVal = document.getElementById('sinopse')?.value;
+
+  const dadosLivro = {
+    titulo: document.getElementById('titulo').value,
+    autor_id: Number(document.getElementById('autor_id').value),
+    categoria_id: Number(document.getElementById('categoria_id').value),
+    isbn: isbnVal ? isbnVal : null,
+    ano_publicacao: anoVal ? Number(anoVal) : null,
+    editora: editoraVal ? editoraVal : null,
+    sinopse: sinopseVal ? sinopseVal : null
+  };
+
+  const url = livroEmEdicaoId ? `${API_URL}/livros/${livroEmEdicaoId}` : `${API_URL}/livros`;
+  const metodo = livroEmEdicaoId ? 'PUT' : 'POST';
+
+  try {
+    const resposta = await fetch(url, {
+      method: metodo,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dadosLivro)
+    });
+
+    if (resposta.ok) {
+      alert(livroEmEdicaoId ? 'Livro atualizado com sucesso!' : 'Livro cadastrado com sucesso!');
+      fecharModal();
+      await carregarLivros();
+      closeDetail();
+    } else {
+      const erro = await resposta.json();
+      alert(`Erro: ${erro.mensagem || 'Falha ao processar requisição'}`);
+    }
+  } catch (erro) {
+    console.error('Erro na requisição:', erro);
+  }
 }
 
-// Eventos de input para filtros
-filterInput.addEventListener('input', applyFilters);
-genreFilter.addEventListener('change', applyFilters);
+// 6. Deletar Livro
+async function deletarLivro(id) {
+  if (!confirm('Tem certeza de que deseja remover este livro?')) return;
 
-// menu de navegação
-document.querySelectorAll('.menu-item').forEach(item => {
-  item.addEventListener('click', function (e) {
-    e.preventDefault();
-    if (this.closest('.menu')) {
-      document.querySelectorAll('.menu .menu-item').forEach(i => i.classList.remove('active'));
-      this.classList.add('active');
+  try {
+    const resposta = await fetch(`${API_URL}/livros/${id}`, { method: 'DELETE' });
+    if (resposta.ok) {
+      closeDetail();
+      await carregarLivros();
+    } else {
+      alert('Erro ao excluir livro.');
     }
-  });
+  } catch (erro) {
+    console.error('Erro ao excluir:', erro);
+  }
+}
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', async () => {
+  await carregarOpcoesSelect();
+  await carregarLivros();
 });
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
-
-renderBooks();
