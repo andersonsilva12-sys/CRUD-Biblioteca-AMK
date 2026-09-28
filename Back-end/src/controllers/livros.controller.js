@@ -24,6 +24,7 @@ exports.criarLivro = (req, res) => {
     editora,
     quantidade,
     sinopse,
+    imagem, // <--- Recebendo a URL da capa
     autor_id,
     categoria_id
   } = req.body;
@@ -33,8 +34,8 @@ exports.criarLivro = (req, res) => {
   }
 
   const query = `
-    INSERT INTO livros (titulo, isbn, ano_publicacao, editora, quantidade, sinopse, autor_id, categoria_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO livros (titulo, isbn, ano_publicacao, editora, quantidade, sinopse, imagem, autor_id, categoria_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = [
@@ -44,6 +45,7 @@ exports.criarLivro = (req, res) => {
     editora || null,
     quantidade !== undefined ? quantidade : 0,
     sinopse || null,
+    imagem || null, // <--- Inserindo no banco
     autor_id,
     categoria_id
   ];
@@ -67,6 +69,7 @@ exports.criarLivro = (req, res) => {
       editora: editora || null,
       quantidade: quantidade !== undefined ? quantidade : 0,
       sinopse: sinopse || null,
+      imagem: imagem || null,
       autor_id,
       categoria_id
     });
@@ -82,6 +85,7 @@ exports.atualizarLivro = (req, res) => {
     editora,
     quantidade,
     sinopse,
+    imagem, // <--- Recebendo a nova imagem/capa
     autor_id,
     categoria_id
   } = req.body;
@@ -92,7 +96,7 @@ exports.atualizarLivro = (req, res) => {
 
   const query = `
     UPDATE livros 
-    SET titulo = ?, isbn = ?, ano_publicacao = ?, editora = ?, quantidade = ?, sinopse = ?, autor_id = ?, categoria_id = ?
+    SET titulo = ?, isbn = ?, ano_publicacao = ?, editora = ?, quantidade = ?, sinopse = ?, imagem = ?, autor_id = ?, categoria_id = ?
     WHERE id = ?
   `;
 
@@ -103,6 +107,7 @@ exports.atualizarLivro = (req, res) => {
     editora || null,
     quantidade !== undefined ? quantidade : 0,
     sinopse || null,
+    imagem || null, // <--- Atualizando no banco
     autor_id,
     categoria_id,
     id
@@ -129,6 +134,7 @@ exports.atualizarLivro = (req, res) => {
       editora: editora || null,
       quantidade: quantidade !== undefined ? quantidade : 0,
       sinopse: sinopse || null,
+      imagem: imagem || null,
       autor_id,
       categoria_id
     });

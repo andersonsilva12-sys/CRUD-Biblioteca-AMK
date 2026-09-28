@@ -3,8 +3,9 @@ let livrosData = [];
 let autoresData = [];
 let categoriasData = [];
 let livroEmEdicaoId = null; // Controla se estamos criando ou editando
+let etapaAtual = 1; // Controla a etapa do modal (1 ou 2)
 
-// 1. Carregar Autores e Categorias para os selects do Modal
+// 1. Carregar Autores e Categorias para os selects do Modal e Filtros
 async function carregarOpcoesSelect() {
   try {
     const [resAutores, resCategorias] = await Promise.all([
@@ -15,6 +16,7 @@ async function carregarOpcoesSelect() {
     autoresData = await resAutores.json();
     categoriasData = await resCategorias.json();
 
+    // Preenche selects do Modal
     const selectAutor = document.getElementById('autor_id');
     const selectCategoria = document.getElementById('categoria_id');
 
@@ -25,35 +27,150 @@ async function carregarOpcoesSelect() {
       autoresData.forEach(a => selectAutor.innerHTML += `<option value="${a.id}">${a.nome}</option>`);
       categoriasData.forEach(c => selectCategoria.innerHTML += `<option value="${c.id}">${c.nome}</option>`);
     }
+
+    // Preenche o Filtro por Gênero/Categoria na tela principal
+    const genreFilter = document.getElementById('genreFilter');
+    if (genreFilter) {
+      genreFilter.innerHTML = '<option value="">Todos os gêneros</option>';
+      categoriasData.forEach(c => {
+        genreFilter.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+      });
+    }
+
   } catch (erro) {
     console.error('Erro ao carregar opções dos selects:', erro);
   }
 }
 
-// 2. Controle de Abertura/Fechamento do Modal
+// 2. Filtro em Tempo Real (Busca por Texto + Filtro por Gênero)
+function aplicarFiltros() {
+  const topbarInput = document.querySelector('.topbar .search-bar input')?.value.toLowerCase().trim() || '';
+  const filterInput = document.getElementById('filterInput')?.value.toLowerCase().trim() || '';
+  const genreFilter = document.getElementById('genreFilter')?.value || '';
+
+  // Consolida o termo de busca (seja da topbar ou do filtro da seção)
+  const termoBusca = topbarInput || filterInput;
+
+  const livrosFiltrados = livrosData.filter(livro => {
+    const autorNome = (autoresData.find(a => a.id === livro.autor_id)?.nome || '').toLowerCase();
+    const titulo = (livro.titulo || '').toLowerCase();
+    const isbn = (livro.isbn || '').toLowerCase();
+
+    // Verifica se bate com a pesquisa textual
+    const bateuTexto = !termoBusca || 
+      titulo.includes(termoBusca) || 
+      autorNome.includes(termoBusca) || 
+      isbn.includes(termoBusca);
+
+    // Verifica se bate com a categoria/gênero selecionado
+    const bateuCategoria = !genreFilter || String(livro.categoria_id) === String(genreFilter);
+
+    return bateuTexto && bateuCategoria;
+  });
+
+  renderBooks(livrosFiltrados);
+}
+
+// Configura os ouvintes de evento (inputs e selects)
+function inicializarEventosFiltro() {
+  const topbarInput = document.querySelector('.topbar .search-bar input');
+  const filterInput = document.getElementById('filterInput');
+  const genreFilter = document.getElementById('genreFilter');
+
+  if (topbarInput) {
+    topbarInput.addEventListener('input', (e) => {
+      // Sincroniza o valor com o outro input de busca se desejar
+      if (filterInput) filterInput.value = e.target.value;
+      aplicarFiltros();
+    });
+  }
+
+  if (filterInput) {
+    filterInput.addEventListener('input', (e) => {
+      if (topbarInput) topbarInput.value = e.target.value;
+      aplicarFiltros();
+    });
+  }
+
+  if (genreFilter) {
+    genreFilter.addEventListener('change', aplicarFiltros);
+  }
+}
+
+// 3. Navegação entre Etapas do Modal
+function irParaEtapa(etapa) {
+  if (etapa === 2) {
+    const titulo = document.getElementById('titulo')?.value;
+    const autor = document.getElementById('autor_id')?.value;
+    const categoria = document.getElementById('categoria_id')?.value;
+
+    if (!titulo || !autor || !categoria) {
+      alert('Por favor, preencha os campos obrigatórios (Título, Autor e Categoria) antes de avançar.');
+      return;
+    }
+  }
+
+  etapaAtual = etapa;
+
+  const etapa1El = document.getElementById('etapa-1');
+  const etapa2El = document.getElementById('etapa-2');
+  const badge1El = document.getElementById('step1-badge');
+  const badge2El = document.getElementById('step2-badge');
+
+  if (etapa1El) etapa1El.style.display = etapa === 1 ? 'block' : 'none';
+  if (etapa2El) etapa2El.style.display = etapa === 2 ? 'block' : 'none';
+
+  if (badge1El) badge1El.classList.toggle('active', etapa === 1);
+  if (badge2El) badge2El.classList.toggle('active', etapa === 2);
+}
+
+// 4. Pré-visualização da Capa
+function atualizarPreviewCapa(url) {
+  const imgPreview = document.getElementById('imgPreview');
+  const defaultIcon = document.getElementById('defaultIcon');
+
+  if (imgPreview) {
+    if (url && url.trim() !== '') {
+      imgPreview.src = url;
+      imgPreview.style.display = 'block';
+      if (defaultIcon) defaultIcon.style.display = 'none';
+    } else {
+      imgPreview.style.display = 'none';
+      if (defaultIcon) defaultIcon.style.display = 'block';
+    }
+  }
+}
+
+// 5. Controle de Abertura/Fechamento do Modal
 async function abrirModal(livro = null) {
   await carregarOpcoesSelect();
   const modal = document.getElementById('modalLivro');
-  const tituloModal = modal.querySelector('h2');
+  const tituloModal = document.getElementById('modalTitulo') || modal.querySelector('h2');
+
+  irParaEtapa(1);
 
   if (livro) {
-    // Modo Edição: Preenche todos os campos com os dados atuais do livro
     livroEmEdicaoId = livro.id;
-    tituloModal.textContent = 'Editar Livro';
+    if (tituloModal) tituloModal.textContent = 'Editar Livro';
+
     document.getElementById('titulo').value = livro.titulo || '';
     document.getElementById('autor_id').value = livro.autor_id || '';
     document.getElementById('categoria_id').value = livro.categoria_id || '';
-    
-    // Novos campos adicionados:
+
     if (document.getElementById('isbn')) document.getElementById('isbn').value = livro.isbn || '';
     if (document.getElementById('ano_publicacao')) document.getElementById('ano_publicacao').value = livro.ano_publicacao || '';
     if (document.getElementById('editora')) document.getElementById('editora').value = livro.editora || '';
     if (document.getElementById('sinopse')) document.getElementById('sinopse').value = livro.sinopse || '';
+
+    if (document.getElementById('imagem')) {
+      document.getElementById('imagem').value = livro.imagem || '';
+      atualizarPreviewCapa(livro.imagem || '');
+    }
   } else {
-    // Modo Cadastro: Limpa todos os campos
     livroEmEdicaoId = null;
-    tituloModal.textContent = 'Cadastrar Novo Livro';
+    if (tituloModal) tituloModal.textContent = 'Cadastrar Novo Livro';
     document.getElementById('formLivro').reset();
+    atualizarPreviewCapa('');
   }
 
   if (modal) modal.style.display = 'flex';
@@ -65,15 +182,16 @@ function fecharModal() {
     modal.style.display = 'none';
     document.getElementById('formLivro').reset();
     livroEmEdicaoId = null;
+    irParaEtapa(1);
   }
 }
 
-// 3. Buscar e Renderizar os Cards no Centro (com Botões de Ação)
+// 6. Buscar e Renderizar os Cards
 async function carregarLivros() {
   try {
     const resposta = await fetch(`${API_URL}/livros`);
     livrosData = await resposta.json();
-    renderBooks(livrosData);
+    aplicarFiltros(); // Renderiza os livros respeitando filtros atuais
   } catch (erro) {
     console.error('Erro ao buscar livros:', erro);
   }
@@ -85,25 +203,28 @@ function renderBooks(livros) {
   container.innerHTML = '';
 
   if (!livros || livros.length === 0) {
-    container.innerHTML = '<p style="color: #94a3b8; padding: 1rem;">Nenhum livro cadastrado.</p>';
+    container.innerHTML = '<p style="color: #94a3b8; padding: 1rem;">Nenhum livro encontrado.</p>';
     return;
   }
 
-  livros.forEach((livro, index) => {
-    // Mapeia o nome do Autor e Categoria a partir do ID
+  livros.forEach((livro) => {
     const autor = autoresData.find(a => a.id === livro.autor_id)?.nome || `Autor #${livro.autor_id}`;
     const categoria = categoriasData.find(c => c.id === livro.categoria_id)?.nome || `Cat #${livro.categoria_id}`;
 
+    const capaHTML = livro.imagem
+      ? `<img src="${livro.imagem}" alt="Capa" style="width:100%; height:100%; object-fit:cover; border-radius:4px;" onerror="this.outerHTML='<i class=\\'fa-solid fa-book\\'></i>'">`
+      : `<i class="fa-solid fa-book"></i>`;
+
     container.innerHTML += `
-      <div class="book-card" data-index="${index}" onclick="showDetail(${index})">
-        <div class="book-cover"><i class="fa-solid fa-book"></i></div>
+      <div class="book-card" onclick="showDetailPorId(${livro.id})">
+        <div class="book-cover">${capaHTML}</div>
         <div class="book-info">
           <h3>${livro.titulo}</h3>
           <p>${autor}</p>
           <span class="badge">${categoria}</span>
         </div>
         <div class="book-actions" onclick="event.stopPropagation()">
-          <button class="action-btn edit-btn" title="Editar" onclick="abrirModal(livrosData[${index}])">
+          <button class="action-btn edit-btn" title="Editar" onclick='abrirModal(${JSON.stringify(livro).replace(/'/g, "&apos;")})'>
             <i class="fa-solid fa-pen"></i>
           </button>
           <button class="action-btn delete-btn" title="Excluir" onclick="deletarLivro(${livro.id})">
@@ -115,24 +236,24 @@ function renderBooks(livros) {
   });
 }
 
-// 4. Exibir o Painel Lateral de Detalhes
-function showDetail(index) {
-  const livro = livrosData[index];
+// 7. Painel Lateral de Detalhes
+function showDetailPorId(id) {
+  const livro = livrosData.find(l => l.id === id);
   if (!livro) return;
 
   const detailPanel = document.getElementById('detailPanel');
   const detailContent = document.getElementById('detailContent');
 
-  document.querySelectorAll('.book-card').forEach(c => c.classList.remove('active'));
-  const activeCard = document.querySelector(`.book-card[data-index="${index}"]`);
-  if (activeCard) activeCard.classList.add('active');
-
   const autorNome = autoresData.find(a => a.id === livro.autor_id)?.nome || `Autor #${livro.autor_id}`;
   const categoriaNome = categoriasData.find(c => c.id === livro.categoria_id)?.nome || `Categoria #${livro.categoria_id}`;
 
+  const capaDetalhes = livro.imagem
+    ? `<img src="${livro.imagem}" alt="Capa" style="width:100%; height:100%; object-fit:cover; border-radius:8px;" onerror="this.outerHTML='<i class=\\'fa-solid fa-book\\'></i>'">`
+    : `<i class="fa-solid fa-book"></i>`;
+
   detailContent.innerHTML = `
     <div class="detail-top">
-      <div class="detail-cover"><i class="fa-solid fa-book"></i></div>
+      <div class="detail-cover">${capaDetalhes}</div>
       <div class="detail-info">
         <h2>${livro.titulo}</h2>
         <p class="author">${autorNome}</p>
@@ -159,7 +280,7 @@ function closeDetail() {
   document.querySelectorAll('.book-card').forEach(c => c.classList.remove('active'));
 }
 
-// 5. Salvar (Trata POST para novo ou PUT para edição)
+// 8. Salvar Livro (POST / PUT)
 async function salvarLivro(event) {
   event.preventDefault();
 
@@ -167,6 +288,7 @@ async function salvarLivro(event) {
   const anoVal = document.getElementById('ano_publicacao')?.value;
   const editoraVal = document.getElementById('editora')?.value;
   const sinopseVal = document.getElementById('sinopse')?.value;
+  const imagemVal = document.getElementById('imagem')?.value;
 
   const dadosLivro = {
     titulo: document.getElementById('titulo').value,
@@ -175,7 +297,8 @@ async function salvarLivro(event) {
     isbn: isbnVal ? isbnVal : null,
     ano_publicacao: anoVal ? Number(anoVal) : null,
     editora: editoraVal ? editoraVal : null,
-    sinopse: sinopseVal ? sinopseVal : null
+    sinopse: sinopseVal ? sinopseVal : null,
+    imagem: imagemVal ? imagemVal : null
   };
 
   const url = livroEmEdicaoId ? `${API_URL}/livros/${livroEmEdicaoId}` : `${API_URL}/livros`;
@@ -202,7 +325,7 @@ async function salvarLivro(event) {
   }
 }
 
-// 6. Deletar Livro
+// 9. Deletar Livro
 async function deletarLivro(id) {
   if (!confirm('Tem certeza de que deseja remover este livro?')) return;
 
@@ -223,6 +346,7 @@ async function deletarLivro(id) {
 document.addEventListener('DOMContentLoaded', async () => {
   await carregarOpcoesSelect();
   await carregarLivros();
+  inicializarEventosFiltro();
 });
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });

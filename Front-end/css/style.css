@@ -815,3 +815,48 @@ input::placeholder, textarea::placeholder { color: #657792; }
   object-fit: cover;
   border-radius: inherit;
 }
+
+/* Indicadores de Etapa */
+.step-indicator {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.step-badge {
+  flex: 1;
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #64748b;
+  border: 1px solid #334155;
+  transition: all 0.3s ease;
+}
+
+.step-badge.active {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #3b82f6;
+  font-weight: 600;
+}
+
+/* Área de Pré-visualização da Capa na Etapa 2 */
+.cover-preview-container {
+  margin-top: 1rem;
+}
+
+.cover-preview {
+  width: 120px;
+  height: 170px;
+  background: #0f172a;
+  border: 2px dashed #334155;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 2rem;
+  overflow: hidden;
+}
